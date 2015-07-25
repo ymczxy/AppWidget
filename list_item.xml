@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>    
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"    
+    android:orientation="horizontal"    
+    android:layout_width="fill_parent"    
+    android:layout_height="fill_parent"    
+    android:background="#00000000"
+    >
+      <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="6"
+          >
+      <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="0dip"    
+        android:id = "@+id/widget_list_item_tv_time_layout"
+          >
+      <TextView
+          android:id="@+id/widget_list_item_tv_hour"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="5dp"
+          android:layout_marginRight="0dip"
+          android:layout_marginTop="13dip"      
+          android:gravity="left"
+          android:lineSpacingExtra="4dip"
+          android:textColor="#FFFFF0"
+          android:textSize="18sp" />
+      <TextView
+          android:id="@+id/widget_list_item_tv_minute"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="2dp"
+          android:layout_marginRight="0dip"
+          android:layout_marginTop="13dip" 
+          android:gravity="left"
+          android:lineSpacingExtra="4dip"
+          android:textColor="#FFFFF0"
+          android:textSize="18sp" />
+      </LinearLayout>
+
+      <RelativeLayout
+          android:id="@+id/widget_list_item_layout"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="35dip"
+          android:orientation="horizontal" >
+          <ImageView
+           android:layout_marginTop="10dip"
+          android:id="@+id/bg_widget_content"
+          android:src="@drawable/nothing"
+          android:layout_width="160dp"
+          android:layout_height="30dp"       
+          />          
+          <TextView
+              android:id="@+id/widget_list_item_tv_title"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"           
+              android:layout_marginTop="10dip"
+              android:lineSpacingExtra="4dip"
+              android:textColor="#FFFFF0"
+              android:textSize="23sp" />
+       </RelativeLayout>     
+       </LinearLayout>
+      <ImageView
+          android:id="@+id/test_widget"
+          android:src="@drawable/uncheckbox"
+          android:padding="5dp"
+          android:layout_marginTop="12dp"
+          android:layout_width="30dp"
+          android:layout_height="30dp"       
+          />     	
+</LinearLayout>    
