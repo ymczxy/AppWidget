@@ -1,0 +1,284 @@
+package com.example.appwidget;
+
+//ignore improt ,here just show the idea.
+import *;
+
+/**
+ * @author changel
+ * @data 2014.10.27
+ * 继承AppWidgetProvider的子类
+ */
+public class AppWidget extends AppWidgetProvider {
+	// 发送广播的对应的Action
+	private static final String BROADCAST_STRING = "case1";
+	private static final String BROADCAST_STRING_MENU = "case2";
+	private static final String BROADCAST_STRING_NEWITEM="case3";
+	private static final String BROADCAST_STRING_EDITITEMTWO="case4";
+	private static final String BROADCAST_STRING_DELETE="case5";
+	private static final String BROADCAST_STRING_JUMPTOMAIN="case6";
+	/*
+	 * 删除一个AppWidget所调用的方法
+	 * start when one appwidget deleted 
+	 */
+	@Override
+	public void onDeleted(Context context, int[] appWidgetIds) {
+		// TODO Auto-generated method stub
+		super.onDeleted(context, appWidgetIds);
+		Log.v("AppWidget", "onDeleted方法被调用");
+	}
+
+	/*
+	 * 删除最后一个Appwidget所调用的方法
+	 * stat when last appwidget deleted
+	 */
+	@Override
+	public void onDisabled(Context context) {
+		// TODO Auto-generated method stub
+		super.onDisabled(context);
+		Log.v("AppWidget", "onDisabled方法被调用");
+		PreUtils.setBoolean(context, "widgetState", false);
+	}
+
+	/*
+	 * 接收广播事件
+	 * receive broadcast
+	 */
+	@Override
+	public void onReceive(final Context context, Intent intent) {
+		// TODO Auto-generated method stub
+		super.onReceive(context, intent);
+		Log.v("AppWidget", "onReceive方法被调用");
+		//BROADCAST_STRING
+		if(intent.getAction().equals(BROADCAST_STRING)) {
+			
+			System.out.println("BROADCAST_STRING");
+			System.out.println("来自第"+intent.getIntExtra("content_position", -1)+"日程");				
+			//这里记录了两个intent参数，用以区分listview中正文和imagebutton的点击事件
+			//here record two parameter of intent, use to distuish the click event between content and imagebutton in listview
+			int checkbox_position=intent.getIntExtra("checkbox_position", -1);
+			int content_position= intent.getIntExtra("content_position", -1);
+				
+				//checkbox没有参数，证明正文被点击了
+				//that means checkboxbutton is not pressed,content is pressed	
+				if(checkbox_position==-1){		
+					
+				String titleContent =intent.getStringExtra("title");			
+				TickTockInfoDao queryId =new TickTockInfoDao(context);			
+				int hourContent =intent.getIntExtra("hour",-1);
+				int minuteContent =intent.getIntExtra("minute",-1);	
+				
+				//这个dao方法用来根据内容查询id
+				//here's a method that located in dao ,used to query id with content.
+				int id=queryId.findTaskByTitleAndTime(titleContent,hourContent,minuteContent).getId();		
+				
+		    	//根据时间和标题确定id,将id传给edit。		
+				System.out.println("isContent"+checkbox_position);
+		     	System.out.println(titleContent+""+hourContent+""+minuteContent);
+		     	
+		       if(titleContent.equals("今日无提醒")&&hourContent==0&&minuteContent==0){		
+		    	   
+		          }
+		        else{		    
+    		    Intent intentToEdit = new Intent();
+			    intentToEdit.setClass(context, EditActivity.class);
+			    intentToEdit.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			    intentToEdit.putExtra("edit_id", id);		
+			  //intent1.putExtra("Item","来自第"+intent.getIntExtra("Item", -1)+"日程");
+		   	    context.startActivity(intentToEdit);		
+		      }
+	    }
+	      
+				if(content_position==-1){
+				int check_position=checkbox_position;
+				String checkStateR="checkState"+check_position;
+				Boolean checkState=PreUtils.getBoolean(context,checkStateR, false);	
+				if( checkState==false){
+					PreUtils.setBoolean(context, checkStateR, true);
+				}
+				else if(checkState==true){
+					PreUtils.setBoolean(context, checkStateR, false);
+				}
+				//here offerd a method to update data and refresh the view of appwidget.
+				AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+				int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+				//appWidgetManager.updateAppWidget(widgetIDs, views);
+				onUpdate(context, appWidgetManager, widgetIDs);
+				
+			  }
+		}
+		
+		if(intent.getAction().equals(BROADCAST_STRING_MENU)){			
+			System.out.println("点击了widget菜单按钮");	
+			Boolean colorType=PreUtils.getBoolean(context, "colorType", false);
+			
+			if(colorType==false){
+				PreUtils.setBoolean(context, "colorType", true);
+			}
+			else if(colorType==true){
+				PreUtils.setBoolean(context, "colorType", false);
+			}
+		
+			
+			//成功刷新ui
+			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+			int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+			//appWidgetManager.updateAppWidget(widgetIDs, views);
+			onUpdate(context, appWidgetManager, widgetIDs);
+           
+            
+		}
+		 if(PreUtils.getBoolean(context, "widgetState", false)==true){
+	         if(intent.getAction().equals(BROADCAST_STRING_DELETE)){
+        	 System.out.println("收到了删除广播");        
+       	//這是刷新widget的方法
+       	//收到了主程序传来的删除广播，需要调用两次更新方法才能刷新数据和视图
+       	//recevie delete broadcast,need update the appwidget twice
+	        	    	System.out.println("完成删除");
+						//成功刷新ui
+						AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+						int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+						//appWidgetManager.updateAppWidget(widgetIDs, views);
+						onUpdate(context, appWidgetManager, widgetIDs);	
+						  new Handler().postDelayed(new Runnable(){   
+				        	    public void run() {   
+				        	    	System.out.println("完成删除");
+									//成功刷新ui
+									AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+									int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+									//appWidgetManager.updateAppWidget(widgetIDs, views);
+									onUpdate(context, appWidgetManager, widgetIDs);	
+				        	    }   
+
+				        	 },500);   
+						  
+						
+	        	  
+	         }
+       }
+         if(PreUtils.getBoolean(context, "widgetState", false)==true){
+	         if(intent.getAction().equals(BROADCAST_STRING_NEWITEM)){
+        	System.out.println("收到了新建广播");        
+        	//這是刷新widget的方法
+        	
+	        	    	System.out.println("完成新建");
+						//成功刷新ui
+						AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+						int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+						//appWidgetManager.updateAppWidget(widgetIDs, views);
+						onUpdate(context, appWidgetManager, widgetIDs);	
+						  new Handler().postDelayed(new Runnable(){   
+				        	    public void run() {   
+				        	    	System.out.println("完成新建");
+									//成功刷新ui
+									AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+									int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+									//appWidgetManager.updateAppWidget(widgetIDs, views);
+									onUpdate(context, appWidgetManager, widgetIDs);	
+				        	    }   
+
+				        	 },500);   
+						
+	        	  
+	         }
+        }
+        
+      if(PreUtils.getBoolean(context, "widgetState", false)==true){
+        	
+	         if(intent.getAction().equals(BROADCAST_STRING_EDITITEMTWO)){
+             System.out.println("收到了编辑广播");        
+       	//這是刷新widget的方法    	
+	        	    	System.out.println("完成编辑");
+						//成功刷新ui
+						AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+						int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+						//appWidgetManager.updateAppWidget(widgetIDs, views);
+						onUpdate(context, appWidgetManager, widgetIDs);	
+						  new Handler().postDelayed(new Runnable(){   
+				        	    public void run() {   
+				        	    	System.out.println("完成编辑");
+									//成功刷新ui
+									AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+									int[] widgetIDs = appWidgetManager.getAppWidgetIds(new ComponentName(context,AppWidget.class));
+									//appWidgetManager.updateAppWidget(widgetIDs, views);
+									onUpdate(context, appWidgetManager, widgetIDs);	
+				        	    }   
+
+				        	 },500);   
+						
+	        	  
+	         }
+       }
+        if(intent.getAction().equals(BROADCAST_STRING_JUMPTOMAIN)){
+        	 System.out.println("收到了跳转主页广播");	  
+        	Intent intentToMain = new Intent();
+ 			intentToMain.setClass(context,HomeActivity.class);
+ 			intentToMain.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+ 				
+ 			//intent1.putExtra("Item","来自第"+intent.getIntExtra("Item", -1)+"日程");
+ 			context.startActivity(intentToMain);
+        }	
+       
+	}
+
+	/*
+	 * 创建第一个AppWiget实例所调用的方法 
+	 */
+	 //这里记录了一个值来判断appwidget的状态，如果appwidget不存在，上面的更新方法会导致程序异常
+	 //here recoard a value to jarge the state of appwidget ,if the appwidget is not exist ,the update method above will lead program error.
+	@Override
+	public void onEnabled(Context context) {
+		// TODO Auto-generated method stub
+		super.onEnabled(context);
+		PreUtils.setBoolean(context, "widgetState", true);
+		Log.v("AppWidget", "onEnabled方法被调用");
+	}
+	
+	/*
+	 * 到达指定的时间，或者用户第一次创建Appwidget所调用的方法 
+	 * this method invoked by the launcher generally , 30miniute with min interval.but also invoked by the method below
+	 */
+	@Override
+	public void onUpdate(Context context, AppWidgetManager appWidgetManager,
+			int[] appWidgetIds) {
+		// TODO Auto-generated method stub
+		super.onUpdate(context, appWidgetManager, appWidgetIds);
+		Log.v("AppWidget", "onUpdate方法被调用");
+		
+		RemoteViews remoteViews = new RemoteViews(context.getPackageName(),R.layout.appwidgetlayout);
+		Intent intent = new Intent();
+		intent.setClass(context, WidgetSetService.class);
+		intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS,appWidgetIds);
+		remoteViews.setRemoteAdapter(R.id.listview, intent);  
+			
+		//该intent用于发送全局点击广播
+		Intent intentList = new Intent();
+		intentList.setAction(BROADCAST_STRING);
+		PendingIntent pendingIntentTemplate = PendingIntent.getBroadcast(context, 1, intentList, PendingIntent.FLAG_UPDATE_CURRENT); 
+			
+		//该intent用于跳转到editactivity
+        Intent intentEdit =new Intent(context,EditActivity.class);
+        intentEdit.putExtra("edit_id", -1);
+        PendingIntent Pfullintent= PendingIntent.getActivity(context, 0, intentEdit, PendingIntent.FLAG_CANCEL_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.widget_iv_add, Pfullintent);
+        
+        //该intent用于发送按钮事件改颜色
+        Intent menuPressed=new Intent(BROADCAST_STRING_MENU);
+        PendingIntent PendmenuPressed= PendingIntent.getBroadcast(context, 0, menuPressed, 0);
+        remoteViews.setOnClickPendingIntent(R.id.widget_iv_menu, PendmenuPressed);
+        
+        //该intent用于点击今日安排进入主页
+        Intent jumpToHome=new Intent(BROADCAST_STRING_JUMPTOMAIN);
+        PendingIntent jumpToMain= PendingIntent.getBroadcast(context, 0, jumpToHome, 0);
+        remoteViews.setOnClickPendingIntent(R.id.widget_iv_main,jumpToMain);
+          
+		//拼接PendingIntent  
+		remoteViews.setPendingIntentTemplate(R.id.listview, pendingIntentTemplate);  
+		appWidgetManager.updateAppWidget(appWidgetIds, remoteViews);	
+		AppWidgetManager manager = AppWidgetManager.getInstance(context);  
+		manager.notifyAppWidgetViewDataChanged(appWidgetIds[0], R.id.listview); 
+		
+
+		System.out.println("完成了一次更新");
+	}
+}
+
