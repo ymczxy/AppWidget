@@ -1,0 +1,259 @@
+package com.example.appwidget;
+
+//ignore import ,just show the idea.
+import *;
+
+
+public class WidgetSetService extends RemoteViewsService {
+	private static final String BROADCAST_STRING = "";
+	private static final String BROADCAST_STRING_MENU = "";
+	private static final String BROADCAST_STRING_EDIT="";
+	private static final String BROADCAST_STRING_CHECK="";
+	public int a =0;
+	
+	
+	
+	@Override
+	public void onStart(Intent intent, int startId){
+		super.onCreate();
+	}
+	@Override
+	public IBinder onBind(Intent intent) {
+		return super.onBind(intent);
+	}
+	@Override
+	public RemoteViewsFactory onGetViewFactory(Intent intent) {
+		return new ListRemoteViewsFactory(this.getApplicationContext(), intent);
+	}
+  
+	public class ListRemoteViewsFactory implements RemoteViewsService.RemoteViewsFactory{
+        private List<Integer> minuteList;
+		private Context mContext;
+		private List<String> titleList;
+		private List<Integer> hourList;
+	
+		private int[] appWidgetIds ;
+		//这个方法用以初始化数据，它在桌面插件被创建的时候会调用
+		//this method used to initiate data ,it will be invoke when the appwdiget created.
+		public ListRemoteViewsFactory(Context context, Intent intent) {
+			
+			TickTockInfoDao getInfoOfToday = new TickTockInfoDao(context) ;
+			Calendar calendar = Calendar.getInstance();
+			
+			int year = calendar.get(Calendar.YEAR);
+			int month = calendar.get(Calendar.MONTH)+1;
+			int day = calendar.get(Calendar.DAY_OF_MONTH);
+			
+			titleList = new ArrayList<String>();
+			hourList = new ArrayList<Integer>();
+			minuteList = new ArrayList<Integer>();
+			
+		    List<TickTockInfo> allInfo = getInfoOfToday.findTasksOfToday(year,month,day);
+		    
+		    for(TickTockInfo info : allInfo){
+		    	titleList.add(info.getTitle());
+		    	hourList.add(info.getHour());
+		    	minuteList.add(info.getMinute());
+		    }
+			          
+			mContext = context;
+			appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
+		
+			if(Looper.myLooper() == null){
+				Looper.prepare();
+			}
+			System.out.println("listRemote被调用了");
+		}
+	
+		@Override
+		public void onCreate() {
+		}
+		
+		@Override
+		public void onDataSetChanged() {
+			System.out.println("数据变化了");
+			
+		}
+
+		@Override
+		public void onDestroy() {
+		    titleList.clear();
+			hourList.clear();
+			minuteList.clear();
+			System.out.println("清除数据被调用");
+		
+		}
+
+		@Override
+		public int getCount() {
+			return titleList.size();
+		}
+		
+		@Override
+		public RemoteViews getViewAt(int position) {
+			
+			if(position<0 || position>=titleList.size())
+			{
+				return null;
+			}
+		  //这里重复了上面的方法，因为更新数据的时候需要重新查询数据库
+		  //here repeat the method above,for the update need to requery the sqlite.
+			TickTockInfoDao getInfoOfToday = new TickTockInfoDao(mContext) ;
+			Calendar calendar = Calendar.getInstance();		
+			int year = calendar.get(Calendar.YEAR);
+			int month = calendar.get(Calendar.MONTH)+1;
+			int day = calendar.get(Calendar.DAY_OF_MONTH);		
+			titleList = new ArrayList<String>();
+			hourList = new ArrayList<Integer>();
+			minuteList = new ArrayList<Integer>();
+			
+		    List<TickTockInfo> allInfo = getInfoOfToday.findTasksOfToday(year,month,day);
+		    
+		    for(TickTockInfo info : allInfo){
+		    	titleList.add(info.getTitle());
+		    	hourList.add(info.getHour());
+		    	minuteList.add(info.getMinute());
+		    }
+
+			System.out.println("位置"+position);
+			
+			String titleContent = titleList.get(position);
+			int hourContent =hourList.get(position);
+			int minuteContent =minuteList.get(position);		
+			RemoteViews rv = new RemoteViews(mContext.getPackageName(), R.layout.widget_list_item);	
+			
+			Intent intent = new Intent();
+			intent.setAction(BROADCAST_STRING);
+			intent.putExtra("content_position",position+1);			
+		    intent.putExtra("title", titleContent);
+		    intent.putExtra("hour", hourContent);
+		    intent.putExtra("minute",minuteContent);
+		    
+			Intent intentCheck=new Intent();
+			intentCheck.setAction(BROADCAST_STRING);
+		    intentCheck.putExtra("checkbox_position", position+1);
+			
+		    		 
+		    System.out.println("标题"+titleContent);
+		    SharedPreferences sp =getSharedPreferences("config",MODE_PRIVATE);	 	
+		    //这里用于判断点击了哪个listview的item，appwidget在每次更新的时候会遍历所有的位置，只有加上过滤条件才能修改制定位置的item.
+		    //here "if" jarge the user click which item in the listview,for appwidget will refresh all position when onupdate() invoted，so some inflate is necessary.
+		    if(position==0){
+            if(sp.getBoolean("checkState1",true)==false){
+            	 rv.setImageViewResource(R.id.bg_widget_content,R.drawable.line);
+                //rv.setTextViewText(R.id.test_widget, titleList.get(position));
+                rv.setImageViewResource(R.id.test_widget,R.drawable.checkbox);
+				Boolean test=sp.getBoolean("checkState1", false);
+				System.out.println("intent.false.widget"+test);
+			}
+            
+			else if(sp.getBoolean("checkState1",true)==true){
+				 rv.setImageViewResource(R.id.bg_widget_content,R.drawable.nothing);
+				 rv.setImageViewResource(R.id.test_widget,R.drawable.uncheckbox);
+				
+				Boolean test=sp.getBoolean("checkState1", false);
+				System.out.println("intent.ture.widget"+test);
+				
+		    }		
+		    }
+		 if(position==1){
+	            if(sp.getBoolean("checkState2",true)==false){
+	            	 rv.setImageViewResource(R.id.bg_widget_content,R.drawable.line);
+	                //rv.setTextViewText(R.id.test_widget, titleList.get(position));
+	                rv.setImageViewResource(R.id.test_widget,R.drawable.checkbox);
+					Boolean test=sp.getBoolean("checkState2", false);
+					System.out.println("intent.false.widget"+test);
+				}
+	            
+				else if(sp.getBoolean("checkState2",true)==true){
+					 rv.setImageViewResource(R.id.bg_widget_content,R.drawable.nothing);
+					 rv.setImageViewResource(R.id.test_widget,R.drawable.uncheckbox);
+					
+					Boolean test=sp.getBoolean("checkState2", false);
+					System.out.println("intent.ture.widget"+test);
+			    }		
+			    }
+			    //这里仅提供了三个列表的记录，可以根据需要扩展
+			    //here only offerd three list item record,you can extends it by your need.
+		  if(position==2){
+	            if(sp.getBoolean("checkState3",true)==false){
+	            	 rv.setImageViewResource(R.id.bg_widget_content,R.drawable.line);
+	                //rv.setTextViewText(R.id.test_widget, titleList.get(position));
+	                rv.setImageViewResource(R.id.test_widget,R.drawable.checkbox);
+					Boolean test=sp.getBoolean("checkState3", false);
+					System.out.println("intent.false.widget"+test);
+				}
+	            
+				else if(sp.getBoolean("checkState3",true)==true){
+					 rv.setImageViewResource(R.id.bg_widget_content,R.drawable.nothing);
+					 rv.setImageViewResource(R.id.test_widget,R.drawable.uncheckbox);
+					
+					Boolean test=sp.getBoolean("checkState3", false);
+					System.out.println("intent.ture.widget"+test);
+			    }		
+			    }
+            
+			if(sp.getBoolean("colorType",true)==false){
+				
+				rv.setTextColor(R.id.widget_list_item_tv_title,Color.rgb(000, 000, 000));		
+				rv.setTextColor(R.id.widget_list_item_tv_hour,Color.rgb(000, 000, 000));	
+				rv.setTextColor(R.id.widget_list_item_tv_minute,Color.rgb(000, 000, 000));
+				Boolean test=sp.getBoolean("colorType", false);
+				System.out.println("intent.false.widget"+test);
+			}
+			else if(sp.getBoolean("colorType",true)==true){
+				rv.setTextColor(R.id.widget_list_item_tv_title,Color.rgb(255, 255,255));
+				rv.setTextColor(R.id.widget_list_item_tv_hour,Color.rgb(255, 255,255));	
+				rv.setTextColor(R.id.widget_list_item_tv_minute,Color.rgb(255, 255,255));
+				Boolean test=sp.getBoolean("colorType", false);
+				System.out.println("intent.ture.widget"+test);
+		    }				
+			else{				
+				System.out.println("intent.nothing.widget");
+			}
+			if(titleContent=="今日无提醒"&&hourContent==0&&minuteContent==0){
+			rv.setTextViewText(R.id.widget_list_item_tv_title, titleContent);
+			}
+			else{
+			rv.setTextViewText(R.id.widget_list_item_tv_title, titleContent);
+			rv.setTextViewText(R.id.widget_list_item_tv_hour, hourContent+" "+":");
+			if(minuteContent<10){
+			rv.setTextViewText(R.id.widget_list_item_tv_minute, "0"+minuteContent);
+			}
+			else{
+			rv.setTextViewText(R.id.widget_list_item_tv_minute, ""+minuteContent);	
+			}
+			}
+			rv.setOnClickFillInIntent(R.id.test_widget, intentCheck);
+			rv.setOnClickFillInIntent(R.id.widget_list_item_layout, intent);
+			
+			System.out.println("getViewAt被调用了");
+			return rv;
+		    
+            
+		}
+		
+	   
+		@Override
+		public RemoteViews getLoadingView() {
+			return null;
+		}
+
+		@Override
+		public int getViewTypeCount() {
+			return 1;
+		}
+
+		@Override
+		public long getItemId(int position) {
+			return position;
+		}
+
+		@Override
+		public boolean hasStableIds() {
+			return true;
+		}
+		
+	
+	}
+}
